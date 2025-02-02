@@ -17,17 +17,19 @@ fn main() {
     io::stdin().read_line(&mut input).unwrap();
     let mut s = input.split_whitespace();
 
-
-
-    let env = ExecutorEnv::builder().write(&input).unwrap().build().unwrap();
-
+    let mut data: Vec<u32> = Vec::new();
 
     let sepal_length: u32 = s.next().unwrap().parse().unwrap(); 
     let sepal_width: u32 = s.next().unwrap().parse().unwrap();
     let petal_length: u32 = s.next().unwrap().parse().unwrap();
-    let petal_width :u32 = s.next().unwrap().parse().unwrap();
+    let petal_width: u32 = s.next().unwrap().parse().unwrap();
 
+    data.push(sepal_length);
+    data.push(sepal_width);
+    data.push(petal_length);
+    data.push(petal_width);
 
+    let env = ExecutorEnv::builder().write(&data).unwrap().build().unwrap();
 
     // Run prover & generate receipt
     let receipt:Receipt = prover.prove(env, ZK_DTP_ELF).unwrap().receipt;
@@ -38,6 +40,7 @@ fn main() {
     // Optional: Verify receipt to confirm that recipients will also be able to
     // verify your receipt
     receipt.verify(ZK_DTP_ID);
+    println!("The receipt is verified!");
 
         // // Extract journal of receipt
         // let c: u32 = from_slice(&receipt.journal).unwrap();
