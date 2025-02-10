@@ -1,15 +1,17 @@
-
 use risc0_zkvm::guest::env;
+use risc0_zkvm::serde::from_slice;
 
 
 pub fn main() {
     // TODO: Implement your guest code here
-    let sepal_length: u32 = env::read();
-    let sepal_width: u32 = env::read();
-    let petal_length: u32 = env::read();
-    let petal_width: u32 = env::read();
+    let data:Vec<u32> = env::read();
+    let (sepal_length, sepal_width, petal_length, petal_width): (u32, u32, u32, u32) = 
+        from_slice(&data).unwrap();
+    
+    println!("sepal_length: {}, sepal_width: {}, petal_length: {}, petal_width: {}", sepal_length, sepal_width, petal_length, petal_width);
 
     let prediction: u32 = predict(sepal_length, sepal_width, petal_length, petal_width);
+
 
     env::commit(&prediction);
 }
