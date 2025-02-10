@@ -3,13 +3,10 @@
 use methods::{ZK_DTP_ELF, ZK_DTP_ID};
 use risc0_zkvm::{default_prover, ExecutorEnv, Receipt};
 use std::io;
-use risc0_zkvm::serde::to_vec;
 use std::fs;
 
 fn main() {
     // Make the prover.
-    let prover = default_prover();
-
     // TODO: Implement communication with the guest here
     println!("Please input the sepal length, sepal width, petal length, petal width.");
 
@@ -22,7 +19,9 @@ fn main() {
     let petal_length: u32 = s.next().unwrap().parse().unwrap();
     let petal_width: u32 = s.next().unwrap().parse().unwrap();
 
-    let data = to_vec(&(sepal_length, sepal_width, petal_length, petal_width)).unwrap();
+    let data: (u32, u32, u32, u32) = (sepal_length, sepal_width, petal_length, petal_width);
+
+    println!("Data is: {:?}", data);
 
     let env = ExecutorEnv::builder()
         .write(&data)
@@ -30,8 +29,10 @@ fn main() {
         .build()
         .unwrap();
 
+    let prover = default_prover();
+
     // Run prover & generate receipt
-    let receipt: Receipt = prover.prove(env, ZK_DTP_ELF).unwrap().receipt;
+    let receipt: Receipt = prover.prove(env, &ZK_DTP_ELF).unwrap().receipt;
 
     let receipt_bin = bincode::serialize(&receipt).unwrap();
 
