@@ -1,77 +1,97 @@
-import React, { useState } from 'react';
-import { Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Loader } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { ModelCard } from '../components/ModelCard';
-import { useStore } from '../store';
+import { useReadContract } from 'wagmi';
+import { abi } from '../../abi/MLModelMarketplace';
 
 export const ExplorePage: React.FC = () => {
-  const models = useStore((state) => state.models);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedType, setSelectedType] = useState('all');
+  const [modelIds] = useState<number[]>([1, 2, 3, 4, 5]); // Test with first 5 IDs
+  const [chainModels, setChainModels] = useState<any[]>([]);
   const [selectedStatus, setSelectedStatus] = useState('all');
 
-  const filteredModels = models.filter((model) => {
-    const matchesSearch = model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      model.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === 'all' || model.type === selectedType;
-    const matchesStatus = selectedStatus === 'all' || model.status === selectedStatus;
-    return matchesSearch && matchesType && matchesStatus;
+  const { data, isPending, error } = useReadContract({
+    address: '0xA81a624F25a114b392A0894703b380aEb7cd7864',
+    abi,
+    functionName: 'getModelDetails',
+    args: [1], // Initial fetch for testing
   });
+
+  useEffect(() => {
+    if (data) {
+      const [
+        provider,
+        name,
+        description,
+        inputFormat,
+        pricePerPrediction,
+        codeHash,
+        isActive
+      ] = data as any[];
+      
+      setChainModels([{
+        id: '1',
+        provider,
+        name,
+        description,
+        inputFormat,
+        pricePerPrediction: Number(pricePerPrediction) / 1e18,
+        codeHash,
+        isActive,
+        status: isActive ? 'verified' : 'failed'
+      }]);
+    }
+  }, [data]);
+
+  const filteredModels = chainModels.filter(model => {
+    if (selectedStatus === 'all') return true;
+    return model.status === selectedStatus;
+  });
+
+  if (isPending) return (
+    <Layout>
+      <div className="text-center py-8">
+        <Loader className="animate-spin h-8 w-8 mx-auto" />
+        <p className="mt-2 text-gray-600">Loading models from blockchain...</p>
+      </div>
+    </Layout>
+  );
+
+  if (error) return (
+    <Layout>
+      <div className="text-center py-8 text-red-600">
+        Error loading models: {error.message}
+      </div>
+    </Layout>
+  );
 
   return (
     <Layout>
-      <div className="md:flex md:items-center md:justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Explore Models</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Browse and discover verified AI models
-          </p>
-        </div>
-      </div>
-
-      <div className="bg-white shadow-sm rounded-lg p-6 mb-6">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              placeholder="Search models..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="sm:flex sm:items-center sm:justify-between mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Explore AI Models</h1>
           <select
-            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-          >
-            <option value="all">All Types</option>
-            <option value="DecisionTree">Decision Tree</option>
-            <option value="RandomForest">Random Forest</option>
-            <option value="Other">Other</option>
-          </select>
-
-          <select
-            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+            className="mt-4 sm:mt-0 block w-full sm:w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
           >
             <option value="all">All Statuses</option>
-            <option value="pending">Pending</option>
             <option value="verified">Verified</option>
             <option value="failed">Failed</option>
           </select>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredModels.map((model) => (
-          <ModelCard key={model.id} model={model} />
-        ))}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredModels.map((model) => (
+            <ModelCard key={model.id} model={{
+              ...model,
+              // Map blockchain model to local Model type
+              pricePerPrediction: Number(model.pricePerPrediction),
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }} />
+          ))}
+        </div>
       </div>
     </Layout>
   );

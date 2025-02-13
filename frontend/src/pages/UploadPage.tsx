@@ -4,10 +4,16 @@ import { Loader } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/Button';
+import { useWriteContract } from 'wagmi';
+import { parseEther } from 'viem';
+import { abi } from '../../abi/MLModelMarketplace'; // Adjust import path
+import { usePublicClient } from 'wagmi';
 
 export const UploadPage: React.FC = () => {
   const navigate = useNavigate();
   const { address } = useAccount();
+  const { writeContract, isPending, error } = useWriteContract();
+  const publicClient = usePublicClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [formData, setFormData] = useState({
     provider: '',
@@ -17,16 +23,53 @@ export const UploadPage: React.FC = () => {
     pricePerPrediction: '',
     codeHash: '',
   });
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsGenerating(true);
+    setErrorMessage('');
     
-    // Simulate proof generation
-    setTimeout(() => {
-      setIsGenerating(false);
-      navigate('/dashboard');
-    }, 2000);
+    try {
+      // Add validation
+      if (!formData.pricePerPrediction || isNaN(Number(formData.pricePerPrediction))) {
+        throw new Error('Invalid price value');
+      }
+
+      const priceInWei = parseEther(formData.pricePerPrediction);
+      
+      // // Add code hash validation
+      // if (!formData.codeHash.match(/^0x[a-fA-F0-9]{64}$/)) {
+      //   throw new Error('Code hash must be 64 hex characters with 0x prefix');
+      // }
+
+      const codeHash = formData.codeHash.startsWith('0x') 
+        ? formData.codeHash 
+        : `0x${formData.codeHash}`;
+
+      const hash = await writeContract({
+        address: '0xA81a624F25a114b392A0894703b380aEb7cd7864',
+        abi: abi,
+        functionName: 'registerModel',
+        args: [
+          formData.name,
+          formData.description,
+          formData.inputFormat,
+          priceInWei,
+          codeHash as `0x${string}`
+        ],
+      });
+
+      // Wait for transaction confirmation
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status === 'success') {
+        navigate('/dashboard');
+      } else {
+        throw new Error('Transaction failed');
+      }
+    } catch (error) {
+      console.error('Registration failed:', error);
+      setErrorMessage(error?.toString() || 'Failed to register model');
+    }
   };
 
   return (
@@ -42,7 +85,7 @@ export const UploadPage: React.FC = () => {
         </div>
 
         <div className="bg-white shadow-sm rounded-lg p-6">
-          <form onSubmit={handleSubmit}>
+          <form>
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
@@ -144,20 +187,26 @@ export const UploadPage: React.FC = () => {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isGenerating}
+                  disabled={isPending}
                   className="min-w-[120px]"
+                  onClick={handleSubmit}
                 >
-                  {isGenerating ? (
+                  {isPending ? (
                     <>
                       <Loader className="animate-spin h-5 w-5 mr-2" />
-                      Generating Proof
+                      Registering...
                     </>
                   ) : (
-                    'Upload & Generate Proof'
+                    'Upload & Register'
                   )}
                 </Button>
               </div>
             </div>
+            {errorMessage && (
+              <div className="mt-4 text-red-600 text-sm">
+                {errorMessage}
+              </div>
+            )}
           </form>
         </div>
       </div>
