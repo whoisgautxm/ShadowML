@@ -1,70 +1,15 @@
-# RISC Zero Rust Starter Template
+## Video Tutorial
+https://youtu.be/AfbtoJ8n_EQ
 
-Welcome to the RISC Zero Rust Starter Template! This template is intended to
-give you a starting point for building a project using the RISC Zero zkVM.
-Throughout the template (including in this README), you'll find comments
-labelled `TODO` in places where you'll need to make changes. To better
-understand the concepts behind this template, check out the [zkVM
-Overview][zkvm-overview].
+## Overview
+The **ShadowML** Marketplace is a decentralized platform that enables machine learning model providers to offer privacy-preserving predictions. Powered by **ZkVerify and Arbitrum**, our solution generates zero-knowledge proofs (zk-proofs) that validate prediction correctness without exposing the underlying model logic or sensitive input data.
+Our initial proof-of-concept uses the classic Iris model—a decision tree trained on the well-known Iris dataset—to demonstrate how sensitive ML models can deliver accurate predictions while keeping proprietary details confidential.
 
-## Quick Start
 
-First, make sure [rustup] is installed. The
-[`rust-toolchain.toml`][rust-toolchain] file will be used by `cargo` to
-automatically install the correct version.
-
-To build all methods and execute the method within the zkVM, run the following
-command:
-
-```bash
-cargo run
-```
-
-This is an empty template, and so there is no expected output (until you modify
-the code).
-
-### Executing the Project Locally in Development Mode
-
-During development, faster iteration upon code changes can be achieved by leveraging [dev-mode], we strongly suggest activating it during your early development phase. Furthermore, you might want to get insights into the execution statistics of your project, and this can be achieved by specifying the environment variable `RUST_LOG="[executor]=info"` before running your project.
-
-Put together, the command to run your project in development mode while getting execution statistics is:
-
-```bash
-RUST_LOG="[executor]=info" RISC0_DEV_MODE=1 cargo run
-```
-
-### Running Proofs Remotely on Bonsai
-
-_Note: The Bonsai proving service is still in early Alpha; an API key is
-required for access. [Click here to request access][bonsai access]._
-
-If you have access to the URL and API key to Bonsai you can run your proofs
-remotely. To prove in Bonsai mode, invoke `cargo run` with two additional
-environment variables:
-
-```bash
-BONSAI_API_KEY="YOUR_API_KEY" BONSAI_API_URL="BONSAI_URL" cargo run
-```
-
-## How to Create a Project Based on This Template
-
-Search this template for the string `TODO`, and make the necessary changes to
-implement the required feature described by the `TODO` comment. Some of these
-changes will be complex, and so we have a number of instructional resources to
-assist you in learning how to write your own code for the RISC Zero zkVM:
-
-- The [RISC Zero Developer Docs][dev-docs] is a great place to get started.
-- Example projects are available in the [examples folder][examples] of
-  [`risc0`][risc0-repo] repository.
-- Reference documentation is available at [https://docs.rs][docs.rs], including
-  [`risc0-zkvm`][risc0-zkvm], [`cargo-risczero`][cargo-risczero],
-  [`risc0-build`][risc0-build], and [others][crates].
 
 ## Directory Structure
-
 It is possible to organize the files for these components in various ways.
-However, in this starter template we use a standard directory structure for zkVM
-applications, which we think is a good starting point for your applications.
+However, in this starter template we use a standard directory structure for zkVM applications, which we think is a good starting point for your applications.
 
 ```text
 project_name
@@ -84,14 +29,7 @@ project_name
         └── lib.rs
 ```
 
-## Video Tutorial
 
-For a walk-through of how to build with this template, check out this [excerpt
-from our workshop at ZK HACK III][zkhack-iii].
-
-## Questions, Feedback, and Collaborations
-
-We'd love to hear from you on [Discord][discord] or [Twitter][twitter].
 
 [bonsai access]: https://bonsai.xyz/apply
 [cargo-risczero]: https://docs.rs/cargo-risczero
@@ -109,3 +47,121 @@ We'd love to hear from you on [Discord][discord] or [Twitter][twitter].
 [twitter]: https://twitter.com/risczero
 [zkhack-iii]: https://www.youtube.com/watch?v=Yg_BGqj_6lg&list=PLcPzhUaCxlCgig7ofeARMPwQ8vbuD6hC5&index=5
 [zkvm-overview]: https://dev.risczero.com/zkvm
+
+# zkVerify - Zero-Knowledge Proof Verification System
+
+## Key Components
+
+### 1. Proof Generation (Rust)
+- Generates zk proofs using RISC Zero zkVM
+- Handles iris flower classification as example workload
+- Outputs proof data to JSON files
+
+### 2. Verification Server (Node.js)
+- Integration with zkVerify smart contract
+- REST API for proof verification
+- Event-driven architecture for attestation confirmation
+
+
+### 3. Smart Contracts
+- `ZkMLMarketplace.sol`: Main verification contract
+- Proof verification with merkle tree validation
+- Event emission for successful verifications
+
+### 4. Frontend Integration
+- React interface for proof submission
+- Real-time verification status tracking
+- Ethereum transaction management
+
+## Environment Setup
+
+1. **Required Variables** (`.env`):
+```env
+ETH_SECRET_KEY= # Ethereum private key
+ETH_RPC_URL= #RPC_URL
+ZKV_RPC_URL=wss://testnet-rpc.zkverify.io 
+ETH_ZKVERIFY_CONTRACT_ADDRESS= # Deployed contract address
+ETH_APP_CONTRACT_ADDRESS= # Your dApp contract address
+ZKV_SEED_PHRASE= #SEED_PHRASE
+```
+
+
+## Running the Project
+
+### 1. Start Verification Server
+```bash
+cd zkVerify/app && npm i
+cd src && npm start 
+```
+
+### 2. Run zkVM Host
+```bash
+cd host
+cargo run --release
+```
+
+### 3. Start Frontend
+```bash
+cd frontend && npm i 
+npm run dev
+```
+
+## API Endpoints
+
+### Generate Proof (POST `/generate-proof`)
+```json
+Request:
+{
+  "sepal_length": 5.1,
+  "sepal_width": 3.5,
+  "petal_length": 1.4,
+  "petal_width": 0.2
+}
+
+Response:
+{
+  "status": "success",
+  "message": "Proof generated",
+  "flower_type": "setosa"
+}
+```
+
+### Verify Proof (POST `/verify`)
+```json
+Response:
+{
+  "status": "success|pending|error",
+  "attestationId": 44653,
+  "txHash": "0x...",
+  "root": "0x6da9e56952c1e8215f3a7b9c4cfa1c70e52af0d399cc296098df6e4e30cf00ba"
+}
+```
+## Future Vision
+
+### Scalable Foundation
+Our current implementation is just the beginning. The underlying technology is designed to be **scalable** and can support more complex models and datasets.
+
+### Industry Applications
+
+#### 🏥 Medical Field
+- **Privacy-preserving AI** is essential for diagnostics and patient data analysis
+- Ensures sensitive health information remains confidential
+- Provides accurate predictive insights while maintaining data security
+
+#### 💳 Banking Sector
+- **Secure AI models** can transform:
+  - Credit scoring systems
+  - Fraud detection mechanisms
+  - Risk assessment processes
+- Delivers trustworthy predictions without compromising customer data
+
+### Expansion Plans
+We plan to expand the marketplace to include a **diverse range of models**, catering to industries that demand:
+- High security standards
+- Strict privacy requirements
+- Verifiable model integrity
+
+## Documentation References
+- [RISC Zero zkVM Documentation](https://dev.risczero.com)
+- [zkVerifyJS SDK Reference](https://docs.zkverify.io/sdk)
+
