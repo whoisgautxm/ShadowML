@@ -32,6 +32,7 @@ async fn main() {
             CorsLayer::new()
                 .allow_origin(AllowOrigin::any())
                 .allow_methods(AllowMethods::any())
+                .allow_headers([hyper::header::CONTENT_TYPE])
         );
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -76,7 +77,7 @@ async fn generate_proof(Json(input): Json<IrisInput>) -> Json<String> {
     };
 
     let proof_output_json = serde_json::to_string(&proof_output).unwrap();
-    fs::write("/home/gautam/Desktop/zk_dtp/zkVerify/app/src/proof.json", proof_output_json).unwrap();
+    fs::write("/Users/shivanshgupta/Desktop/zk_dtp/zkVerify/app/src/proof.json", proof_output_json).unwrap();
 
     let output: u32 = receipt.journal.decode().unwrap();
     let dic = ["setosa", "versicolor", "virginica"];

@@ -150,10 +150,10 @@ export const UploadPage: React.FC = () => {
                   {isGenerating ? (
                     <>
                       <Loader className="animate-spin h-5 w-5 mr-2" />
-                      Generating Proof
+                      Uploading...
                     </>
                   ) : (
-                    'Upload & Generate Proof'
+                    'Upload Onchain on Arbitrum'
                   )}
                 </Button>
               </div>

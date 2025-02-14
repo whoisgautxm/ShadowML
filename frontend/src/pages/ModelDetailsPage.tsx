@@ -15,10 +15,10 @@ export const ModelDetailsPage: React.FC = () => {
 
   const [showProofModal, setShowProofModal] = useState(false);
   const [proofInput, setProofInput] = useState<ProofInput>({
-    length: 0,
-    breadth: 0,
-    height: 0,
-    width: 0,
+    sepal_length: 0,
+    sepal_width: 0,
+    petal_length: 0,
+    petal_width: 0,
   });
   const [isGeneratingProof, setIsGeneratingProof] = useState(false);
   const [proofData, setProofData] = useState<ProofData | null>(null);
@@ -27,53 +27,56 @@ export const ModelDetailsPage: React.FC = () => {
 
   const handleGenerateProof = async () => {
     setIsGeneratingProof(true);
-    // Simulate API call
-    setTimeout(() => {
-      const mockProofData = {
-        proof: {
-          hash: '0x1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7',
-          inputs: proofInput,
-          timestamp: new Date().toISOString(),
-          modelId: id,
-          status: 'pending',
-          metadata: {
-            algorithm: 'zk-SNARK',
-            protocol: 'Groth16',
-            curve: 'BN254'
-          }
+    try {
+      const response = await fetch('http://localhost:3000/generate-proof', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        signature: '0xabc123def456...',
-        nonce: '987654321'
-      };
-      setProofData(mockProofData);
+        body: JSON.stringify(proofInput),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate proof');
+      }
+
+      const responseData = await response.json();
+      setProofData(responseData);
+    } catch (error) {
+      console.error('Proof generation error:', error);
+      setProofData(null);
+    } finally {
       setIsGeneratingProof(false);
       setShowProofModal(false);
       setTimeout(() => {
         proofSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
-    }, 2000);
+    }
   };
 
   const handleVerifyProof = async () => {
     setIsVerifying(true);
-    // Simulate API call
-    setTimeout(() => {
-      setVerificationData({
-        isValid: true,
-        verificationHash: '0xabcdef1234567890',
-        timestamp: new Date().toISOString(),
-        details: {
-          modelName: model?.name || '',
-          inputParameters: proofInput,
-          computationTime: '1.23s',
-          confidence: 0.985
-        }
+    try {
+      const response = await fetch('http://localhost:3000/verify-proof', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
+      if (!response.ok) {
+        throw new Error('Failed to generate proof');
+      }
+      const responseData = await response.json();
+      setVerificationData(responseData);
+    } catch (error) {
+      console.error('Verification error:', error);
+      setVerificationData(null);
+    } finally {
       setIsVerifying(false);
       setTimeout(() => {
         verificationSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    }, 2000);
+      }, 2000);
+    }
   };
 
   if (!model) {
@@ -194,39 +197,39 @@ export const ModelDetailsPage: React.FC = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">Generate Proof</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Length</label>
+                <label className="block text-sm font-medium text-gray-700">sepal_length</label>
                 <input
                   type="number"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  value={proofInput.length}
-                  onChange={(e) => setProofInput({ ...proofInput, length: Number(e.target.value) })}
+                  value={proofInput.sepal_length}
+                  onChange={(e) => setProofInput({ ...proofInput, sepal_length: Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Breadth</label>
+                <label className="block text-sm font-medium text-gray-700">petal_length</label>
                 <input
                   type="number"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  value={proofInput.breadth}
-                  onChange={(e) => setProofInput({ ...proofInput, breadth: Number(e.target.value) })}
+                  value={proofInput.petal_length}
+                  onChange={(e) => setProofInput({ ...proofInput, petal_length: Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Height</label>
+                <label className="block text-sm font-medium text-gray-700">petal_width</label>
                 <input
                   type="number"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  value={proofInput.height}
-                  onChange={(e) => setProofInput({ ...proofInput, height: Number(e.target.value) })}
+                  value={proofInput.petal_width}
+                  onChange={(e) => setProofInput({ ...proofInput, petal_width: Number(e.target.value) })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Width</label>
+                <label className="block text-sm font-medium text-gray-700">sepal_width</label>
                 <input
                   type="number"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  value={proofInput.width}
-                  onChange={(e) => setProofInput({ ...proofInput, width: Number(e.target.value) })}
+                  value={proofInput.sepal_width}
+                  onChange={(e) => setProofInput({ ...proofInput, sepal_width: Number(e.target.value) })}
                 />
               </div>
               <div className="flex justify-end space-x-3">

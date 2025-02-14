@@ -1,8 +1,8 @@
 {
-  "root": "0x2f925aed2090b47c5fa88c97d804b1505f56e31f19a4da4c29bed78a25e99927",
+  "root": "0x70e140a8032b70560e3418544fb8ec88b480a66f2f21c030a6bf336b91e952dd",
   "proof": [],
   "numberOfLeaves": 1,
   "leafIndex": 0,
-  "leaf": "0x5eb467af37fdfd71bafaffc9b2f3866df366d9ec602c65e8b80d2aea44168c34",
-  "attestationId": 44321
+  "leaf": "0x182181f09017a6717893582688d4dee916aac6d148649a32009770bd0049bdb6",
+  "attestationId": 44344
 }
