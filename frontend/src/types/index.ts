@@ -19,16 +19,19 @@ export interface User {
 }
 
 export interface ProofInput {
-  length: number;
-  breadth: number;
-  height: number;
-  width: number;
+  sepal_length: number;
+  sepal_width: number;
+  petal_length: number;
+  petal_width: number;
 }
 
 export interface ProofData {
-  proof: string;
-  timestamp: string;
-  status: 'pending' | 'verified';
+  modelResponse: any;
+  proofData: {
+    proof: string;
+    pub_inputs: string;
+    image_id: string;
+  };
 }
 
 export interface VerificationData {

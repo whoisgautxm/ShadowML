@@ -23,7 +23,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <div className="flex">
               <Link to="/" className="flex-shrink-0 flex items-center">
                 <Brain className="h-8 w-8 text-blue-600" />
-                <span className="ml-2 text-xl font-bold text-gray-900">zkProof</span>
+                <span className="ml-2 text-xl font-bold text-gray-900">ShadowML</span>
               </Link>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                 {navigation.map((item) => {

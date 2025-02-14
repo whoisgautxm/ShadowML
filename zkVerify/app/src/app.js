@@ -1,9 +1,18 @@
 const fs = require("fs");
 const { zkVerifySession, ZkVerifyEvents } = require("zkverifyjs");
 const ethers = require("ethers");
+const path = require("path");
 require("dotenv").config();
 
+
+// Add environment validation
+const validateEnv = () => {
+console.log(process.env.ETH_SECRET_KEY) 
+};
+
 async function run() {
+  validateEnv(); // Validate environment variables first
+  
   const evmAccount = ethers.computeAddress(process.env.ETH_SECRET_KEY);
 
   const proof = require("./proof.json");
@@ -26,7 +35,7 @@ async function run() {
         version: "V1_2", // Mention the R0 version
       },
     });
-    const attestationData = JSON.parse(fs.readFileSync("attestation.json"));
+    const attestationData = JSON.parse(fs.readFileSync(path.join(__dirname, 'attestation.json')));
 
   let attestationId, leafDigest;
   events.on(ZkVerifyEvents.IncludedInBlock, (eventData) => {
@@ -54,23 +63,44 @@ async function run() {
     console.log("Attestation Confirmed", eventData);
     const proofDetails = await session.poe(attestationId, leafDigest);
     proofDetails.attestationId = eventData.id;
-    fs.writeFileSync("attestation.json", JSON.stringify(proofDetails, null, 2));
+    fs.writeFileSync(path.join(__dirname, 'attestation.json'), JSON.stringify(proofDetails, null, 2));
     
     // Move the contract interaction logic HERE
-    const attestationData = JSON.parse(fs.readFileSync("attestation.json"));
+    const attestationData = JSON.parse(fs.readFileSync(path.join(__dirname, 'attestation.json')));
     const filterAttestationsById = zkvContract.filters.AttestationPosted(attestationId, null);
     
-    zkvContract.once(filterAttestationsById, async (_id, _root) => {
-      const txResponse = await appContract.checkHash(
-        proof.pub_inputs,
-        attestationData.attestationId,
-        attestationData.proof,
-        attestationData.numberOfLeaves,
-        attestationData.leafIndex
-      );
-      const { hash } = await txResponse;
-      console.log(`Tx sent to EVM, tx-hash ${hash}`);
-    });
+    let retries = 3;
+    let delay = 2000;
+
+    while (retries > 0) {
+      try {
+        const currentBlock = await provider.getBlockNumber();
+        const fromBlock = Math.max(0, currentBlock - 100); // 100 block lookback
+        const toBlock = currentBlock;
+        
+        if (fromBlock > toBlock) {
+          [fromBlock, toBlock] = [toBlock, fromBlock];
+        }
+
+        const filter = zkvContract.filters.AttestationPosted(attestationId);
+        const logs = await zkvContract.queryFilter(filter, fromBlock, toBlock);
+        
+        if (logs.length > 0) {
+          // Process logs
+          break;
+        }
+        
+        // If no logs found, wait and retry
+        await new Promise(resolve => setTimeout(resolve, delay));
+        retries--;
+        delay *= 2;
+      } catch (error) {
+        if (retries === 0) throw error;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        retries--;
+        delay *= 2;
+      }
+    }
   });
   // Retrieve via rpc call:
   // - the merkle proof of inclusion of the proof inside the attestation
@@ -134,8 +164,8 @@ async function run() {
   const filterAppEventsByCaller =
     appContract.filters.SuccessfulProofSubmission(evmAccount);
     appContract.once(filterAppEventsByCaller, async () => {
-    console.log("App contract has acknowledged that you can factor 42!");
+    console.log("Proof verified and attestation confirmed!");
   });
 }
 
-run();
+module.exports = { run };

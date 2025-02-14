@@ -14,7 +14,7 @@ export const ExplorePage: React.FC = () => {
     address: '0xA81a624F25a114b392A0894703b380aEb7cd7864',
     abi,
     functionName: 'getModelDetails',
-    args: [4], // Initial fetch for testing
+    args: [6], // Initial fetch for testing
   });
 
   useEffect(() => {

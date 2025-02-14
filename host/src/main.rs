@@ -77,7 +77,7 @@ async fn generate_proof(Json(input): Json<IrisInput>) -> Json<String> {
     };
 
     let proof_output_json = serde_json::to_string(&proof_output).unwrap();
-    fs::write("/home/gautam/Desktop/zk_dtp/zkVerify/app/src/proof.json", proof_output_json).unwrap();
+    fs::write("/zk_dtp/zkVerify/app/src/proof.json", proof_output_json).unwrap();
 
     let output: u32 = receipt.journal.decode().unwrap();
     let dic = ["setosa", "versicolor", "virginica"];
@@ -88,32 +88,43 @@ async fn generate_proof(Json(input): Json<IrisInput>) -> Json<String> {
 }
 
 async fn get_proof() -> Json<ProofOutput> {
-    let proof_file = fs::read_to_string("home/gautam/Desktop/zk_dtp/zkVerify/app/src/proof.json").unwrap();
+    let proof_file = fs::read_to_string("/zk_dtp/zkVerify/app/src/proof.json").unwrap();
     let proof_output: ProofOutput = serde_json::from_str(&proof_file).unwrap();
     Json(proof_output)
 }
 
 async fn verify_proof() -> Result<Json<String>, axum::http::StatusCode> {
+    println!("Executing Node.js script for proof verification...");
+    
     let output = std::process::Command::new("sh")
         .arg("-c")
-        .arg("cd zkVerify/app/src && node app.js")
+        .arg("cd zk_dtp/zkVerify/app/src && node app.js")
         .output()
         .map_err(|e| {
-            eprintln!("Command execution error: {:?}", e);
+            let error_msg = format!("Command execution error: {:?}", e);
+            println!("{}", error_msg);
             axum::http::StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-    eprintln!("Node.js script stdout: {}", String::from_utf8_lossy(&output.stdout));
-    eprintln!("Node.js script stderr: {}", String::from_utf8_lossy(&output.stderr));
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    println!("Node.js script stdout: {}", stdout);
+    println!("Node.js script stderr: {}", stderr);
 
     if output.status.success() {
-        let result = String::from_utf8_lossy(&output.stdout).to_lowercase();
+        let result = stdout.to_lowercase();
+        println!("Script execution successful, checking result...");
+        
         if result.contains("attestation confirmed") {
+            println!("Attestation confirmed!");
             Ok(Json(r#"{"status": "success", "message": "Proof verified and attestation confirmed!"}"#.to_string()))
         } else {
+            println!("Verification still in progress");
             Ok(Json(r#"{"status": "pending", "message": "Verification in progress"}"#.to_string()))
         }
     } else {
+        println!("Script execution failed");
         Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR)
     }
 }

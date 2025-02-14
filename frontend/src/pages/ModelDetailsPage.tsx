@@ -3,26 +3,15 @@ import { useParams } from "react-router-dom";
 import { Flag, ArrowLeft, Loader } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { Button } from "../components/Button";
-import { useStore } from "../store";
 import { ProofInput, ProofData, VerificationData } from "../types";
 import { useWriteContract, usePublicClient, useReadContract } from "wagmi";
 import { abi } from "../../abi/MLModelMarketplace";
-import { parseEther } from "viem";
 
-type ModelDetails = {
-  provider: string;
-  name: string;
-  description: string;
-  inputFormat: string;
-  pricePerPrediction: bigint;
-  codeHash: string;
-  isActive: boolean;
-};
 
 export const ModelDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const modelId = Number(4);
-  
+  const modelId = Number(6);
+
   const { data, isPending, error } = useReadContract({
     address: "0xA81a624F25a114b392A0894703b380aEb7cd7864",
     abi,
@@ -38,18 +27,17 @@ export const ModelDetailsPage: React.FC = () => {
     pricePerPrediction,
     codeHash,
     isActive,
-  ] = (data as [string, string, string, string, bigint, string, boolean]) || 
-      ['', '', '', '', BigInt(0), '', false];
+  ] = (data as [string, string, string, string, bigint, string, boolean]) || [ "","","", "",BigInt(0), "",false, ];
 
   const proofSectionRef = useRef<HTMLDivElement>(null);
   const verificationSectionRef = useRef<HTMLDivElement>(null);
 
   const [showProofModal, setShowProofModal] = useState(false);
   const [proofInput, setProofInput] = useState<ProofInput>({
-    length: 0,
-    breadth: 0,
-    height: 0,
-    width: 0,
+    sepal_length: 0,
+    sepal_width: 0,
+    petal_length: 0,
+    petal_width: 0,
   });
   const [isGeneratingProof, setIsGeneratingProof] = useState(false);
   const [proofData, setProofData] = useState<ProofData | null>(null);
@@ -60,14 +48,16 @@ export const ModelDetailsPage: React.FC = () => {
   const { writeContract, isPending: isWritePending } = useWriteContract();
   const publicClient = usePublicClient();
 
+
+
   const handleGenerateProof = async () => {
     setIsGeneratingProof(true);
 
     const inputs = [
-      proofInput.length,
-      proofInput.breadth,
-      proofInput.height,
-      proofInput.width,
+      proofInput.sepal_length,
+      proofInput.sepal_width,
+      proofInput.petal_length,
+      proofInput.petal_width,
     ].map(Number);
 
     try {
@@ -117,30 +107,31 @@ export const ModelDetailsPage: React.FC = () => {
     }
   };
 
+
   const handleVerifyProof = async () => {
     setIsVerifying(true);
     try {
-      // Simulate API call
-      setTimeout(() => {
-        setVerificationData({
-          isValid: true,
-          verificationHash: "0xabcdef1234567890",
-          timestamp: new Date().toISOString(),
-          details: {
-            modelName: name || "",
-            inputParameters: proofInput,
-            computationTime: "1.23s",
-            confidence: 0.985,
-          },
-        });
-        setTimeout(() => {
-          verificationSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, 100);
-      }, 2000);
+      const response = await fetch('http://localhost:3001/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to generate proof');
+      }
+      const responseData = await response.json();
+      setVerificationData(responseData);
     } catch (error) {
-      console.error("Verification error:", error);
+      console.error('Verification error:', error);
+      setVerificationData(null);
     } finally {
-      setIsVerifying(false);
+      setTimeout(() => {
+        setIsVerifying(false);
+      }, 8000);
+      setTimeout(() => {
+        verificationSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 2000);
     }
   };
 
@@ -159,7 +150,9 @@ export const ModelDetailsPage: React.FC = () => {
     return (
       <Layout>
         <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-red-600">Error loading model details</h2>
+          <h2 className="text-2xl font-bold text-red-600">
+            Error loading model details
+          </h2>
           <p className="mt-2 text-gray-600">{error.message}</p>
         </div>
       </Layout>
@@ -220,7 +213,9 @@ export const ModelDetailsPage: React.FC = () => {
                   Price Per Prediction
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900">
-                  {pricePerPrediction ? `${Number(pricePerPrediction) / 1e18} ETH` : 'Loading...'}
+                  {pricePerPrediction
+                    ? `${Number(pricePerPrediction) / 1e18} ETH`
+                    : "Loading..."}
                 </dd>
               </div>
             </dl>
@@ -316,64 +311,64 @@ export const ModelDetailsPage: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Length
+                  sepal_length
                 </label>
                 <input
                   type="number"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  value={proofInput.length}
+                  value={proofInput.sepal_length}
                   onChange={(e) =>
                     setProofInput({
                       ...proofInput,
-                      length: Number(e.target.value),
+                      sepal_length: Number(e.target.value),
                     })
                   }
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Breadth
+                  sepal_width
                 </label>
                 <input
                   type="number"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  value={proofInput.breadth}
+                  value={proofInput.sepal_width}
                   onChange={(e) =>
                     setProofInput({
                       ...proofInput,
-                      breadth: Number(e.target.value),
+                      sepal_width: Number(e.target.value),
                     })
                   }
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Height
+                  petal_length
                 </label>
                 <input
                   type="number"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  value={proofInput.height}
+                  value={proofInput.petal_length}
                   onChange={(e) =>
                     setProofInput({
                       ...proofInput,
-                      height: Number(e.target.value),
+                      petal_length: Number(e.target.value),
                     })
                   }
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Width
+                  petal_width
                 </label>
                 <input
                   type="number"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  value={proofInput.width}
+                  value={proofInput.petal_width}
                   onChange={(e) =>
                     setProofInput({
                       ...proofInput,
-                      width: Number(e.target.value),
+                      petal_width: Number(e.target.value),
                     })
                   }
                 />
